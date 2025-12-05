@@ -166,11 +166,6 @@ These capabilities provide a comprehensive framework for interpreting multivaria
 - SciPy
 - Plotly
 
-
----
-
-## 📘 Reports
-
 ---
 
 ## 👥 Authors

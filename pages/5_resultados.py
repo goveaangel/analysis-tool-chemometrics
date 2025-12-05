@@ -137,27 +137,14 @@ with col_b:
             mime="application/json",
         )
 
-        with st.expander("Ver resumen rápido del preprocesamiento"):
-            st.write(f"Filas antes / después: **{prep_report['rows_before']} → {prep_report['rows_after']}**")
-            st.write(f"Columnas antes / después: **{prep_report['cols_before']} → {prep_report['cols_after']}**")
-            st.write(f"Columnas eliminadas por NaNs: {prep_report['dropped_nan_columns'] or 'Ninguna'}")
-            st.write(f"Columnas eliminadas por baja varianza: {prep_report['dropped_low_var_columns'] or 'Ninguna'}")
-            st.write(f"Estrategia de NaNs: **{prep_report['nan_strategy']}**")
-            st.write(f"Método de escalado: **{prep_report['scaling_method']}**")
-            st.write(
-                f"Outliers: método **{prep_report['outlier_method']}**, "
-                f"acción **{prep_report['outlier_action']}**"
-            )
     else:
         st.info("No hay `preprocessing_report` en sesión (généralo en 🧼 Preprocesamiento).")
 
 # Heatmap de correlación (recalculado aquí para poder exportar)
-st.markdown("#### Heatmap de correlación (recalculado para exportar)")
 fig_corr = None
 if raw_df is not None:
     try:
         fig_corr = correlation_heatmap(raw_df, method="pearson")
-        st.plotly_chart(fig_corr, use_container_width=True)
     except Exception as e:
         st.warning(f"No se pudo generar el heatmap de correlación: {e}")
 else:
