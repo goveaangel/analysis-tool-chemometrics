@@ -1,7 +1,7 @@
 # pages/5_🧬_Clustering.py
 import streamlit as st
-import pandas as pd
-from sklearn.decomposition import PCA 
+import numpy as np
+
 from backend.clustering import (
     run_kmeans,
     run_hierarchical,
@@ -14,58 +14,60 @@ st.title("🧬 Clustering (K-means & Jerárquico)")
 st.markdown("Configura y visualiza **clústers** en el espacio de las PCs.")
 
 # ============================
-# Recuperar datos base
+# 0. Recuperar datos base
 # ============================
 
-# Ajusta la clave según como lo guardaste tú:
-raw_df = st.session_state.get("raw_df") or st.session_state.get("raw_data")
+clean_data = st.session_state.get("clean_data", None)
+raw_df_state = st.session_state.get("raw_df", None)
+raw_data_state = st.session_state.get("raw_data", None)
+
+if clean_data is not None:
+    raw_df = clean_data
+elif raw_df_state is not None:
+    raw_df = raw_df_state
+elif raw_data_state is not None:
+    raw_df = raw_data_state
+else:
+    raw_df = None
 
 if raw_df is None:
-    st.warning("No se encontraron datos originales en sesión (raw_df/raw_data). "
-               "Sube un dataset en la pestaña de carga antes de usar clustering.")
+    st.warning(
+        "No se encontraron datos en sesión. "
+        "Primero carga y preprocesa un dataset en las pestañas anteriores."
+    )
     st.stop()
 
 # ============================
-# Generar PCs fake si aún no hay PCA
+# 0.5 Recuperar info de PCA
 # ============================
-if "pca_scores" not in st.session_state:
-    st.info("No se encontraron scores de PCA. Generando PCs temporales para pruebas...")
 
-    # Tomamos solo columnas numéricas
-    num_df = raw_df.select_dtypes(include="number")
+pca_info = st.session_state.get("pca_info", None)
 
-    if num_df.shape[1] < 2:
-        st.warning("Se necesitan al menos 2 variables numéricas para calcular PCA y clustering.")
-        st.stop()
-
-    # El número de componentes será hasta 3 o el máximo posible
-    n_components = min(3, num_df.shape[1])
-
-    pca = PCA(n_components=n_components, random_state=42)
-    scores_array = pca.fit_transform(num_df)
-
-    pc_cols = [f"PC{i+1}" for i in range(n_components)]
-    scores = pd.DataFrame(scores_array, index=num_df.index, columns=pc_cols)
-
-    st.session_state["pca_scores"] = scores
-else:
-    scores = st.session_state["pca_scores"]
-
-if scores is None:
-    st.warning("Primero necesitas calcular el PCA en la pestaña correspondiente.")
+if pca_info is None or "scores" not in pca_info:
+    st.warning(
+        "No se encontró información de PCA en la sesión.\n\n"
+        "Ve a la pestaña **📉 PCA**, ejecuta el análisis y presiona "
+        "el botón **'✅ Guardar información PCA'** antes de usar clustering."
+    )
     st.stop()
 
-# Detectar columnas de PCs (por si cambian nombres)
+# 👇 AQUÍ definimos scores y ya NO debe dar NameError
+scores = pca_info["scores"]
+
+if scores is None or scores.empty:
+    st.error("Los scores de PCA están vacíos. Revisa la configuración en la pestaña de PCA.")
+    st.stop()
+
+# Detectar columnas de PCs
 pc_cols = [c for c in scores.columns if c.upper().startswith("PC")]
 if len(pc_cols) < 2:
     st.warning("Se requieren al menos PC1 y PC2 para visualizar el clustering.")
     st.stop()
 
-# Usaremos hasta las primeras 3 PCs para el modelo
-pc_model_cols = pc_cols[:3]
-pc_plot_x = pc_cols[0]
-pc_plot_y = pc_cols[1]
-
+# Usaremos hasta las primeras 3 PCs para el modelo (si existen)
+pc_model_cols = pc_cols[: min(3, len(pc_cols))]
+pc_plot_x = pc_model_cols[0]
+pc_plot_y = pc_model_cols[1] if len(pc_model_cols) > 1 else pc_model_cols[0]
 # ============================
 # 1. Opciones de clustering
 # ============================
