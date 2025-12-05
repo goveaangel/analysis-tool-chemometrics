@@ -1,5 +1,80 @@
 import pandas as pd
 import numpy as np
+import plotly.express as px
+
+#---------------------------
+# GRAFICAS Y VISUALIZACIONES
+#---------------------------
+
+# HEATMAP CORRELACION
+def compute_correlation(df, method="pearson", only_numeric=True):
+    """
+    Calcula una matriz de correlación a partir de un DataFrame.
+
+    Parámetros
+    ----------
+    df : pd.DataFrame
+        Datos de entrada.
+    method : str
+        Método de correlación: 'pearson', 'spearman' o 'kendall'.
+    only_numeric : bool
+        Si True, usa solo columnas numéricas.
+
+    Devuelve
+    --------
+    corr : pd.DataFrame
+        Matriz de correlación (variables x variables).
+    """
+    if df is None or df.empty:
+        raise ValueError("No se puede calcular la correlación: el DataFrame está vacío o es None.")
+
+    if only_numeric:
+        df = df.select_dtypes(include="number")
+
+    if df.shape[1] < 2:
+        raise ValueError(
+            "Se necesitan al menos 2 variables numéricas para calcular la matriz de correlación."
+        )
+
+    corr = df.corr(method=method)
+    return corr
+
+def correlation_heatmap(df, method="pearson", only_numeric=True):
+    """
+    Construye un heatmap de correlación mostrando únicamente el triángulo inferior
+    y colocando la diagonal correctamente de arriba-izquierda a abajo-derecha.
+    """
+    corr = compute_correlation(df, method=method, only_numeric=only_numeric)
+
+    # Copia para no modificar la original
+    corr_masked = corr.copy()
+
+    # Eliminar triángulo superior de la matriz original
+    corr_masked.values[np.triu_indices_from(corr_masked, k=1)] = np.nan
+
+    # Invertimos el eje Y para que la diagonal quede correctamente orientada
+    corr_masked = corr_masked.iloc[::-1]
+
+    fig = px.imshow(
+        corr_masked,
+        text_auto=True,
+        aspect="auto",
+        color_continuous_scale="RdBu_r",
+        origin="lower",
+        labels=dict(color="Correlación"),
+    )
+
+    fig.update_layout(
+        xaxis_title="Variables",
+        yaxis_title="Variables",
+        yaxis=dict(
+            tickmode="array",
+            tickvals=list(range(len(corr_masked))),
+            ticktext=list(corr_masked.index),
+        )
+    )
+
+    return fig
 
 # SELECCION INICIAL
 
