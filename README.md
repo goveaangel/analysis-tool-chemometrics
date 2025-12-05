@@ -151,9 +151,15 @@ These capabilities provide a comprehensive framework for interpreting multivaria
 
 ## 📈 Results Summary
 
----
+The Results & Export module consolidates the main outcomes of the entire workflow—preprocessing, PCA, and clustering—into a single, export-ready view. From this section, users can:
 
-## 🧠 Key Insights
+- Download the **raw** and **preprocessed** datasets, along with a JSON report describing the preprocessing steps applied.
+- Export key **PCA artifacts**, including scores, loadings, and explained-variance tables, and review a short textual interpretation of the principal components.
+- Inspect **clustering results**, with cluster sizes, numerical summaries by cluster, and a global silhouette score to assess separation quality.
+- Download the most relevant **figures** (scree plot, cumulative variance, PCA score plots, biplot, clustering scatter plots, dendrogram, and correlation heatmap) in image format for use in reports or presentations.
+- Generate a **global text report** summarizing preprocessing, PCA, and clustering, and optionally bundle all outputs into a single `.zip` file for archiving or sharing.
+
+This module is intended as the final stop in the workflow, where exploratory analysis is translated into interpretable, well-documented results.
 
 ---
 

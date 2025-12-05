@@ -377,7 +377,7 @@ scaling_method = st.radio(
         "Centrado a la media",
         "Autoscaling (z-score)",
         "Min–Max [0, 1]",
-        "Pareto (quimiometría)",
+        "Pareto",
     ],
 )
 
