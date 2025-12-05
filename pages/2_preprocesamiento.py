@@ -1,5 +1,5 @@
 import streamlit as st
-from backend.preprocesing import basic, run_manual_preprocessing, correlation_heatmap
+from backend.preprocesing import basic, run_manual_preprocessing, correlation_heatmap, boxplot_variables_grid, histogram_variables_grid
 
 # Inicializar claves mínimas en session_state
 if "raw_data" not in st.session_state:
@@ -22,6 +22,9 @@ Puedes usar una **plantilla automática** (recomendado para empezar) o configura
 )
 
 raw_df = st.session_state["raw_data"]
+#Detección rápida de tipos
+numeric_cols = list(raw_df.select_dtypes(include="number").columns)
+categorical_cols = list(raw_df.select_dtypes(include=["object", "category"]).columns)
 
 if raw_df is None:
     st.info(
@@ -120,9 +123,76 @@ with st.expander('🚨 Plantillas de Preprocesamiento'):
 with st.expander('📊 Graficas y visualizaciones'):
 
     st.subheader('Heatmap Correlación')
+    st.caption(
+        "La correlación muestra qué variables cambian de forma similar "
+        "y ayuda a identificar relaciones, redundancias y patrones del proceso."
+    )
+    
     
     fig_raw = correlation_heatmap(raw_df, method="pearson")
     st.plotly_chart(fig_raw, use_container_width=True)
+    
+
+    st.subheader("Visualizaciones de Distribución y Rango por Variable")
+    st.caption(
+        "Selecciona una o varias variables numéricas para explorar su distribución, "
+        "rango y posibles valores atípicos."
+    )
+
+    if len(numeric_cols) == 0:
+        st.warning("El dataset no tiene variables numéricas para generar boxplots.")
+    else:
+        selected_vars = []
+        # Umbral para decidir si usamos checkboxes o multiselect
+        max_checkbox_vars = 20
+        if len(numeric_cols) <= max_checkbox_vars:
+            # --- Versión UX pro con checkboxes en grid ---
+            st.caption("Marca las variables que quieras visualizar:")
+            # Número de columnas del grid de checkboxes
+            if len(numeric_cols) <= 6:
+                n_cols = 2
+            elif len(numeric_cols) <= 12:
+                n_cols = 3
+            else:
+                n_cols = 4
+
+            cols = st.columns(n_cols)
+
+            for i, col_name in enumerate(numeric_cols):
+                with cols[i % n_cols]:
+                    checked = st.checkbox(
+                        col_name,
+                        key=f"boxvar_{col_name}",
+                    )
+                    if checked:
+                        selected_vars.append(col_name)
+        else:
+            # --- Si hay muchísimas variables, usamos multiselect ---
+            selected_vars = st.multiselect(
+                "Variables numéricas disponibles",
+                options=numeric_cols,
+                help="Selecciona las variables que quieres visualizar en los boxplots.",
+            )
+
+        # Feedback rápido de lo que eligió el usuario
+        st.caption(f"Variables seleccionadas: {len(selected_vars)}")
+
+        st.subheader("Boxplots de las variables seleccionadas")
+        # Generar figura solo si hay selección
+        fig_box = boxplot_variables_grid(raw_df, variables=selected_vars)
+
+        if not selected_vars or fig_box is None:
+            st.info("Selecciona al menos una variable para visualizar sus boxplots.")
+        else:
+            st.plotly_chart(fig_box, use_container_width=True)
+        
+        st.subheader("Histogramas de las variables seleccionadas")
+        fig_hist = histogram_variables_grid(raw_df, variables=selected_vars, nbins=30)
+
+        if not selected_vars or fig_hist is None:
+            st.info("Selecciona al menos una variable para visualizar sus histogramas.")
+        else:
+            st.plotly_chart(fig_hist, use_container_width=True)
 
 # ==========================================================
 # 1) SELECCIÓN DE COLUMNAS
@@ -132,8 +202,7 @@ st.header("1️⃣ Selección de columnas")
 st.markdown('Elige qué variables se usarán en el análisis.')
 
 # Detección rápida de tipos (solo UI, sin aplicar nada todavía)
-numeric_cols = list(raw_df.select_dtypes(include="number").columns)
-categorical_cols = list(raw_df.select_dtypes(include=["object", "category"]).columns)
+
 
 st.markdown("**Variables numéricas detectadas:**")
 st.caption(", ".join(numeric_cols) if numeric_cols else "_No se detectaron columnas numéricas._")

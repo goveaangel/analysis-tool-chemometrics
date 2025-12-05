@@ -4,3 +4,4 @@ numpy
 xlrd
 plotly
 scikit-learn
+scipy
