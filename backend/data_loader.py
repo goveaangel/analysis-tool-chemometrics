@@ -17,6 +17,17 @@ def load_data(file):
     else:
         raise ValueError("Formato no soportado. Usa .csv o .xlsx.")
 
+
+def mask_dtype(dtype):
+    if pd.api.types.is_numeric_dtype(dtype):
+        return "🔢 Numérico"
+    elif pd.api.types.is_categorical_dtype(dtype) or pd.api.types.is_object_dtype(dtype):
+        return "🔠 Categórico"
+    elif pd.api.types.is_datetime64_any_dtype(dtype):
+        return "📅 Fecha"
+    else:
+        return "❓ Otro"
+    
 def get_basic_summary(df):
     
     summary = {
@@ -26,8 +37,7 @@ def get_basic_summary(df):
     "na_counts": df.isna().sum(),
     "describe": df.describe(include="all"),
     }
+    summary["dtype_mask"] = summary["dtypes"].apply(mask_dtype)
     return summary
-
-
 
 

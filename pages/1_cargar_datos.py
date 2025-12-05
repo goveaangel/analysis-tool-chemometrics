@@ -1,6 +1,6 @@
 # pages/2_📁_Cargar_Datos.py
 import streamlit as st
-from backend.data_loader import load_data, get_basic_summary
+from backend.data_loader import load_data, get_basic_summary, mask_dtype
 
 if 'raw_data' not in st.session_state:
     st.session_state['raw_data'] = None
@@ -45,13 +45,13 @@ if df is not None and summary is not None:
     st.markdown("---")
 
     with st.expander('🔢 Tipos de datos'):
-         st.dataframe(
-            summary["dtypes"].to_frame("dtype"),
-            height=200,
+        st.dataframe(
+            summary["dtype_mask"].to_frame("Tipo de dato"),
             use_container_width=True
         )
     with st.expander("🔍 Valores faltantes por columna"):
-        st.write(summary["na_counts"])
+        st.dataframe(
+            summary["na_counts"].to_frame("(Valores vacíos)"))
 
     with st.expander("📊 Resumen estadístico"):
         st.write(summary["describe"])

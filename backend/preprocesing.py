@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import math
 
 #---------------------------
 # GRAFICAS Y VISUALIZACIONES
@@ -36,7 +39,7 @@ def compute_correlation(df, method="pearson", only_numeric=True):
             "Se necesitan al menos 2 variables numéricas para calcular la matriz de correlación."
         )
 
-    corr = df.corr(method=method)
+    corr = df.corr(method=method).round(2)
     return corr
 
 def correlation_heatmap(df, method="pearson", only_numeric=True):
@@ -72,6 +75,135 @@ def correlation_heatmap(df, method="pearson", only_numeric=True):
             tickvals=list(range(len(corr_masked))),
             ticktext=list(corr_masked.index),
         )
+    )
+
+    return fig
+
+# BOXPLOTS
+
+def boxplot_variables_grid(df, variables=None):
+    """Crea un grid de boxplots con layout dinámico según nº de variables."""
+
+    # Si no seleccionan nada → no hay figura
+    if variables is None or len(variables) == 0:
+        return None
+
+    n = len(variables)
+
+    # Layout dinámico
+    if n == 1:
+        cols = 1
+        rows = 1
+        base_height = 550
+    elif n == 2:
+        cols = 2
+        rows = 1
+        base_height = 450
+    elif n <= 4:
+        cols = 2
+        rows = math.ceil(n / cols)
+        base_height = 450
+    elif n <= 6:
+        cols = 3
+        rows = math.ceil(n / cols)
+        base_height = 400
+    else:
+        cols = 4
+        rows = math.ceil(n / cols)
+        base_height = 350
+
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        subplot_titles=variables,
+        horizontal_spacing=0.10,
+        vertical_spacing=0.18,
+    )
+
+    row, col = 1, 1
+    for var in variables:
+        fig.add_trace(
+            go.Box(y=df[var], name=var, boxpoints="outliers"),
+            row=row,
+            col=col,
+        )
+        col += 1
+        if col > cols:
+            col = 1
+            row += 1
+
+    fig.update_layout(
+        height=base_height * rows,
+        # el width casi no importa si usas use_container_width=True en Streamlit
+        width=350 * cols,
+        showlegend=False,
+    )
+
+    return fig
+
+# HISTOGRAMAS
+
+def histogram_variables_grid(df, variables=None, nbins=30):
+    """
+    Crea un grid de histogramas con layout dinámico según nº de variables.
+    """
+
+    # Si no seleccionan nada → no hay figura
+    if variables is None or len(variables) == 0:
+        return None
+
+    n = len(variables)
+
+    # Layout dinámico (mismo criterio que boxplot_variables_grid)
+    if n == 1:
+        cols = 1
+        rows = 1
+        base_height = 550
+    elif n == 2:
+        cols = 2
+        rows = 1
+        base_height = 450
+    elif n <= 4:
+        cols = 2
+        rows = math.ceil(n / cols)
+        base_height = 450
+    elif n <= 6:
+        cols = 3
+        rows = math.ceil(n / cols)
+        base_height = 400
+    else:
+        cols = 4
+        rows = math.ceil(n / cols)
+        base_height = 350
+
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        subplot_titles=variables,
+        horizontal_spacing=0.10,
+        vertical_spacing=0.18,
+    )
+
+    row, col = 1, 1
+    for var in variables:
+        fig.add_trace(
+            go.Histogram(
+                x=df[var],
+                nbinsx=nbins,
+                name=var,
+            ),
+            row=row,
+            col=col,
+        )
+        col += 1
+        if col > cols:
+            col = 1
+            row += 1
+
+    fig.update_layout(
+        height=base_height * rows,
+        width=350 * cols,
+        showlegend=False,
     )
 
     return fig
