@@ -22,9 +22,6 @@ Puedes usar una **plantilla automática** (recomendado para empezar) o configura
 )
 
 raw_df = st.session_state["raw_data"]
-#Detección rápida de tipos
-numeric_cols = list(raw_df.select_dtypes(include="number").columns)
-categorical_cols = list(raw_df.select_dtypes(include=["object", "category"]).columns)
 
 if raw_df is None:
     st.info(
@@ -32,6 +29,10 @@ if raw_df is None:
         "Después regresa aquí para preprocesarlo."
     )
     st.stop()
+
+#Detección rápida de tipos
+numeric_cols = list(raw_df.select_dtypes(include="number").columns)
+categorical_cols = list(raw_df.select_dtypes(include=["object", "category"]).columns)
 
 st.success("Datos crudos disponibles desde **📁 Cargar datos**.")
 st.caption(f"Dimensiones actuales del dataset: `{raw_df.shape[0]} filas × {raw_df.shape[1]} columnas`")
@@ -120,12 +121,24 @@ with st.expander('🚨 Plantillas de Preprocesamiento'):
             except Exception as e:
                 st.error(f"❌ Ocurrió un error al aplicar la plantilla básica: {e}")
 
+# ==========================================================
+# 0.5) GRAFICAS Y VISUALIZACIONES
+# ==========================================================
 with st.expander('📊 Graficas y visualizaciones'):
 
     st.subheader('Heatmap Correlación')
-    st.caption(
-        "La correlación muestra qué variables cambian de forma similar "
-        "y ayuda a identificar relaciones, redundancias y patrones del proceso."
+    st.write(
+        """
+    Un *heatmap de correlación* muestra qué tan relacionadas están tus variables.
+    Los valores van de **-1** a **+1**:
+
+    - **+1 (correlación positiva fuerte):** ambas variables aumentan o disminuyen juntas.  
+    - **0 (sin correlación):** no hay relación lineal clara.  
+    - **-1 (correlación negativa fuerte):** cuando una sube, la otra baja.
+
+    Los colores más **intensos** indican relaciones más fuertes.  
+    Esto ayuda a detectar variables redundantes, posibles agrupamientos y señales de problemas como multicolinealidad.
+    """
     )
     
     
@@ -178,6 +191,13 @@ with st.expander('📊 Graficas y visualizaciones'):
         st.caption(f"Variables seleccionadas: {len(selected_vars)}")
 
         st.subheader("Boxplots de las variables seleccionadas")
+        st.write("""
+            Los *boxplots* muestran **cómo se distribuye cada variable** y permiten **detectar valores atípicos**.  
+            La caja representa **el rango donde se concentra la mayor parte de los datos**, la línea central es la
+            **mediana**, y los puntos fuera de los **bigotes** indican **posibles outliers**.  
+            Esto ayuda a identificar **alta dispersión**, **asimetría** o **comportamientos anómalos** que pueden 
+            afectar el **análisis multivariado**.
+        """)
         # Generar figura solo si hay selección
         fig_box = boxplot_variables_grid(raw_df, variables=selected_vars)
 
@@ -187,6 +207,13 @@ with st.expander('📊 Graficas y visualizaciones'):
             st.plotly_chart(fig_box, use_container_width=True)
         
         st.subheader("Histogramas de las variables seleccionadas")
+        st.write("""
+            Los histogramas muestran **cómo se distribuyen los valores** de cada variable.  
+            Permiten identificar si los datos son **simétricos**, si están **concentrados en ciertos rangos**, o si
+            existen **colas largas** y **valores atípicos**.  
+            Son útiles para entender **la forma de la distribución** antes de aplicar **transformaciones** o 
+            **modelos multivariados**.
+        """)
         fig_hist = histogram_variables_grid(raw_df, variables=selected_vars, nbins=30)
 
         if not selected_vars or fig_hist is None:

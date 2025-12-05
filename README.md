@@ -8,28 +8,27 @@ A Streamlit-based PCA & Clustering Laboratory
 ```bash
 CHEMOMETRICS/
 │
-├── app.py                     # Main Streamlit entry point
+├── Inicio.py                     # Main Streamlit entry point
 │
-├── pages/                     # Streamlit multi-page interface
+├── pages/                        # Streamlit multi-page interface
 │   ├── 1_cargar_datos.py
 │   ├── 2_preprocesamiento.py
 │   ├── 3_PCA.py
 │   ├── 4_clustering.py
 │   └── 5_resultados.py
 │
-├── backend/                   # Core logic for PCA, clustering & preprocessing
+├── backend/                      # Core logic for PCA, clustering & preprocessing
 │   ├── __init__.py
 │   ├── data_loader.py
 │   ├── pca.py
-│   └── preprocessing.py
+│   ├── preprocessing.py
+│   └── clustering.py             
 │
-├── data/                      
+├── data/
 │   └── chemometrics_example.xlsx  # Example dataset
 │
-├── models/                    # Reserved for ML models (future)
-│
-├── requirements.txt           
-└── README.md                  
+├── requirements.txt
+└── README.md           
 ```
 
 ---
@@ -131,6 +130,22 @@ Visual outputs include 2D and 3D score plots and a biplot that illustrates how v
 ---
 
 ## 🧭 Clustering Module
+
+## 🧭 Clustering Module
+
+The clustering module enables users to identify natural groupings within the dataset by leveraging the PCA scores as input features. The tool supports two clustering methods:
+
+- **K-Means**, which partitions observations into k clusters based on centroid optimization.  
+- **Hierarchical clustering**, which builds a tree-like structure of relationships and allows flexible exploration through different linkage criteria.
+
+Users can configure the number of clusters, choose the linkage method for hierarchical models, and visualize the resulting groups directly in the PCA space. The module includes several interactive visual outputs:
+
+- **2D scatter plots** of clusters using PC1 and PC2  
+- **Dendrograms** for hierarchical clustering, with automatic sampling for large datasets  
+- **Quality metrics**, including silhouette score and inertia (SSE for K-Means)  
+- **Cluster summaries**, showing cluster sizes and mean values of numerical variables  
+
+These capabilities provide a comprehensive framework for interpreting multivariate structure and assessing how observations group together after dimensionality reduction.
 
 ---
 
