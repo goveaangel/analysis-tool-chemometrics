@@ -5,72 +5,132 @@ A Streamlit-based PCA & Clustering Laboratory
 
 ## 📂 Repository Structure
 
-```bashso
+```bash
 CHEMOMETRICS/
 │
 ├── app.py                     # Main Streamlit entry point
 │
-├── frontend/                  # All Streamlit pages (multi-page app)
+├── pages/                     # Streamlit multi-page interface
 │   ├── 1_cargar_datos.py
 │   ├── 2_preprocesamiento.py
 │   ├── 3_PCA.py
 │   ├── 4_clustering.py
 │   └── 5_resultados.py
 │
-├── backend/                   # Core logic for loading and preprocessing
+├── backend/                   # Core logic for PCA, clustering & preprocessing
 │   ├── __init__.py
-│   └── data_loader.py
+│   ├── data_loader.py
+│   ├── pca.py
+│   └── preprocessing.py
 │
-├── data/                      # Example datasets (if needed)
-│   └── chemometrics_example.xlsx
+├── data/                      
+│   └── chemometrics_example.xlsx  # Example dataset
 │
-├── models/                    # Future ML/PCA/clustering models will go here
+├── models/                    # Reserved for ML models (future)
 │
-├── requirements.txt           # Python dependencies
-└── README.md                  # Project documentation
+├── requirements.txt           
+└── README.md                  
 ```
 
 ---
 
 ## ⚙️ Project Overview
-This project is a web-based interactive platform built with Streamlit for performing multivariate data analysis in a chemometrics context.
-It is designed for students and researchers to:
 
-- Upload chemical or experimental datasets
-- Clean and preprocess data
-- Run Principal Component Analysis (PCA)
-- Perform K-Means and Hierarchical Clustering
-- Visualize results dynamically
-- Export cleaned datasets and scores
-- Follow a guided workflow inspired by chemometric methodology
+This project is a web-based interactive platform built with Streamlit for performing multivariate data analysis in a chemometrics context.  
+It is designed for students, analysts, and researchers who need to:
 
-The application aims to be a teaching tool and a practical analysis assistant.
+- Upload chemical or experimental datasets  
+- Clean and preprocess data  
+- Perform Principal Component Analysis (PCA)  
+- Apply K-Means and Hierarchical Clustering  
+- Visualize results through interactive plots  
+- Export cleaned datasets, PCA scores, and clustering results  
+- Follow a guided workflow aligned with standard chemometric practices  
+
+The application functions both as an educational tool and as a practical assistant for exploratory multivariate analysis.
+
+---
+
+## 🚀 Quick Start
+
+1. Clone the repository
+```bash
+git clone https://github.com/goveaangel/analysis-tool-chemometrics
+cd analysis-tool-chemometrics
+```
+
+2. Create a virtual environment
+```bash
+python -m venv chemometrics
+```
+
+3. Activate environment
+
+Mac/Linux:
+```bash
+source chemometrics/bin/activate
+```
+
+Windows:
+```bash
+chemometrics\Scripts\activate
+```
+
+4. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+5. Run Streamlit
+```bash
+streamlit run app.py
+```
 
 ---
 
 ## 📊 Methodology
 
-1. Load data 
-2. Preprocessing
-- Select variables
-- Handle NaNs
-- Automatic templates
-- Scale/normalize
-- Detect outliers
-- Apply transformations
-3. PCA
-- Compute components
-- Visualize variance
-- Scatter/biplots
-4. Clustering
-- K-Means / Hierarchical
-- Silhouette score
-- Different linkage methods
-5.  Output
-- Export clean data
-- Export cluster labels
-- Export PCA scores
-- Generate automated report
+| Step | Description |
+|------|-------------|
+| **1. [Load Data](#📥-input-requirements)** | Import datasets (CSV, XLS, XLSX) and automatically detect numerical and categorical variables. |
+| **2. [Preprocessing](#🧼-preprocessing-workflow)** | Variable selection, NaN handling, preprocessing templates, normalization, outlier checks, and transformations. |
+| **3. [PCA](#📈-pca-module)** | Compute principal components, visualize explained and cumulative variance, and generate score plots and biplots. |
+| **4. [Clustering](#🧭-clustering-module)** | Apply K-Means or hierarchical clustering, evaluate clusters via silhouette score, and choose linkage strategies. |
+| **5. [Output](#📈-results-summary)** | Export the cleaned dataset, PCA scores, cluster labels, and view summarized analytical results. |
+
+---
+
+## 📥 Input Requirements
+
+The application accepts datasets in CSV, XLS, and XLSX formats. Each file should follow a standard tabular structure where rows represent observations and columns represent variables. While categorical variables may be included, multivariate methods such as PCA and clustering require at least two valid numerical variables.
+
+Datasets may contain missing values, as these are handled automatically during preprocessing. However, users are advised to avoid columns containing free text, redundant identifiers, or constant values, as these provide little analytical value and may introduce noise.
+
+---
+
+## 🧼 Preprocessing Workflow
+
+Before performing any multivariate analysis, the dataset undergoes a structured cleaning and transformation pipeline. This workflow includes:
+
+- Detecting and removing columns with excessive missing values  
+- Excluding rows that exceed a missing-value threshold  
+- Median imputation for numerical variables  
+- Filtering out features with near-zero variance  
+- Scaling all variables using z-score normalization to ensure comparable influence across dimensions  
+
+These steps produce a consistent and standardized dataset suitable for PCA, clustering, and other multivariate techniques.
+
+---
+
+## 📈 PCA Module
+
+The PCA module enables exploration of the underlying structure of the dataset by reducing its dimensionality. The system computes the principal components, displays both the explained variance and the cumulative variance, and allows the user to choose the appropriate number of components.
+
+Visual outputs include 2D and 3D score plots and a biplot that illustrates how variables and observations relate within the component space. Users may optionally color observations based on a selected categorical variable to enhance interpretability. All PCA results—including scores, loadings, and model information—can be exported for reporting or further analysis.a
+
+---
+
+## 🧭 Clustering Module
 
 ---
 
@@ -84,12 +144,12 @@ The application aims to be a teaching tool and a practical analysis assistant.
 
 ## 🧩 Technologies Used
 - Python 3.10+
-- Streamlit — UI framework
-- Pandas — Data handling
-- NumPy — Numerical operations
-- Scikit-learn (upcoming) — PCA & clustering
-- SciPy (upcoming) — Hierarchical clustering
-- Plotly & Matplotlib (upcoming) — Visualizations
+- Streamlit
+- Pandas
+- NumPy
+- Scikit-Learn
+- SciPy
+- Plotly
 
 
 ---
@@ -100,17 +160,10 @@ The application aims to be a teaching tool and a practical analysis assistant.
 
 ## 👥 Authors
 
-- **Diego Vértiz Padilla**  
-- **José Ángel Govea García**  
+- **José Ángel Govea García**
+- **Diego Vértiz Padilla**    
 - **Daniel Alberto Sánchez Fortiz**  
 - **Augusto Ley Rodríguez**  
-- **Ángel Esparza Enríquez**
 
 Tecnológico de Monterrey, School of Engineering and Sciences  
 Guadalajara, Jalisco — México  
-
----
-
-## 🔒 Confidentiality
-This project is intended for academic and instructional purposes.
-No confidential or proprietary datasets should be uploaded into the tool unless explicitly permitted.
