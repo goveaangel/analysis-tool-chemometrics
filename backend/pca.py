@@ -12,7 +12,13 @@ def run_pca_full(df):
     Ejecuta PCA sobre las columnas numéricas del DataFrame preprocesado.
     Calcula todas las componentes posibles.
 
-    Devuelve un dict con, entre otros, explained_variance_ratio.
+    Devuelve un dict con:
+    - X_num
+    - scores
+    - loadings
+    - explained_variance_ratio
+    - pca_model
+    - columns (columnas originales usadas en PCA)
     """
     X_num = df.select_dtypes(include="number").copy()
 
@@ -49,7 +55,12 @@ def run_pca_full(df):
 
 def get_explained_variance_df(explained_variance_ratio):
     """
-    DataFrame con varianza explicada y acumulada.
+    Construye un DataFrame con varianza explicada y acumulada.
+
+    Columns:
+    - PC
+    - Varianza explicada
+    - Varianza acumulada
     """
     pcs = [f"PC{i+1}" for i in range(len(explained_variance_ratio))]
     var_exp = explained_variance_ratio
@@ -63,6 +74,7 @@ def get_explained_variance_df(explained_variance_ratio):
         }
     )
     return df_var
+
 
 def plot_cumulative_variance(df_var_full, n_components):
     """
@@ -115,14 +127,6 @@ def plot_cumulative_variance(df_var_full, n_components):
 
     return fig
 
-# backend/pca_plots.py
-
-import plotly.express as px
-
-
-import plotly.express as px
-import plotly.graph_objects as go
-
 def plot_scree(df_var, n_components=None, title=""):
     """
     Crea la gráfica de codo (Scree plot) y marca en rojo la componente seleccionada.
@@ -143,7 +147,7 @@ def plot_scree(df_var, n_components=None, title=""):
 
     # Selección de componentes
     if n_components is not None:
-        df_plot = df_var.iloc[:n_components+2].copy()
+        df_plot = df_var.iloc[: n_components + 2].copy()
     else:
         df_plot = df_var.copy()
 
@@ -159,11 +163,11 @@ def plot_scree(df_var, n_components=None, title=""):
     fig.update_layout(
         xaxis_title="Componentes principales",
         yaxis_title="Varianza explicada",
-        height=400
+        height=400,
     )
 
     # Agregar el punto rojo
-    if n_components is not None and n_components-1 < len(df_var):
+    if n_components is not None and n_components - 1 < len(df_var):
         selected_row = df_var.iloc[n_components - 1]
         fig.add_trace(
             go.Scatter(
@@ -177,6 +181,7 @@ def plot_scree(df_var, n_components=None, title=""):
 
     return fig
 
+
 def get_scores_subset(pca_results, n_components):
     """
     Devuelve las primeras n componentes de los scores como DataFrame.
@@ -188,18 +193,21 @@ def get_scores_subset(pca_results, n_components):
     return scores[pcs].copy()
 
 
-def plot_scores_2d(scores_df, pc_x="PC1", pc_y="PC2", title=None):
+def plot_scores_2d(scores_df, pc_x="PC1", pc_y="PC2", color=None, title=None):
     """
     Crea un scatter plot 2D de scores PCA con estilo formateado.
 
     Parámetros
     ----------
     scores_df : DataFrame
-        Debe contener las columnas pc_x y pc_y.
+        Debe contener las columnas pc_x y pc_y. Si se pasa `color`, también
+        debe contener esa columna.
     pc_x : str
         Nombre de la componente para el eje X (ej. 'PC1').
     pc_y : str
         Nombre de la componente para el eje Y (ej. 'PC2').
+    color : str or None
+        Nombre de la columna (categórica o numérica) para colorear los puntos.
     title : str or None
         Título de la gráfica.
 
@@ -213,11 +221,15 @@ def plot_scores_2d(scores_df, pc_x="PC1", pc_y="PC2", title=None):
     if title is None:
         title = f"Scores PCA ({pc_x} vs {pc_y})"
 
+    # Si la columna color no existe, la ignoramos
+    color_arg = color if (color is not None and color in scores_df.columns) else None
+
     # Figura base
     fig = px.scatter(
         scores_df,
         x=pc_x,
         y=pc_y,
+        color=color_arg,  # puede ser None
         title=title,
     )
 
@@ -249,16 +261,20 @@ def plot_scores_2d(scores_df, pc_x="PC1", pc_y="PC2", title=None):
 
     return fig
 
-def plot_scores_3d(scores_df, pc_x="PC1", pc_y="PC2", pc_z="PC3", title=None):
+
+def plot_scores_3d(scores_df, pc_x="PC1", pc_y="PC2", pc_z="PC3", color=None, title=None):
     """
     Crea un scatter plot 3D de scores PCA con estilo formateado.
 
     Parámetros
     ----------
     scores_df : DataFrame
-        Debe contener las columnas pc_x, pc_y y pc_z.
+        Debe contener las columnas pc_x, pc_y y pc_z. Si se pasa `color`,
+        también debe contener esa columna.
     pc_x, pc_y, pc_z : str
         Nombres de las componentes para los ejes X, Y y Z.
+    color : str or None
+        Nombre de la columna (categórica o numérica) para colorear los puntos.
     title : str or None
         Título de la gráfica.
 
@@ -275,12 +291,16 @@ def plot_scores_3d(scores_df, pc_x="PC1", pc_y="PC2", pc_z="PC3", title=None):
     if title is None:
         title = f"Scores PCA ({pc_x} vs {pc_y} vs {pc_z})"
 
+    # Si la columna color no existe, la ignoramos
+    color_arg = color if (color is not None and color in scores_df.columns) else None
+
     # Figura base
     fig = px.scatter_3d(
         scores_df,
         x=pc_x,
         y=pc_y,
         z=pc_z,
+        color=color_arg,  # puede ser None
         title=title,
     )
 
@@ -308,6 +328,7 @@ def plot_scores_3d(scores_df, pc_x="PC1", pc_y="PC2", pc_z="PC3", title=None):
     )
 
     return fig
+
 
 def plot_biplot_2d(scores_df, loadings_df, pc_x="PC1", pc_y="PC2", title=None):
     """

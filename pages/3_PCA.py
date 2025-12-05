@@ -203,6 +203,16 @@ st.markdown(
 # Tomamos scores hasta las primeras n componentes
 scores_subset = get_scores_subset(pca_results, n_components)
 
+
+# opcional: colorear por variable categórica
+
+# Recuperar info categórica desde el preprocesamiento (si existe)
+cat_cols = st.session_state.get("selected_categorical_vars", []) or []
+cat_df = st.session_state.get("categorical_data", None)
+
+color_var = None
+scores_for_plot = scores_subset.copy()  # este DF será el que mandemos a las funciones de plotting
+
 # PCs disponibles según n_components
 pc_options = [f"PC{i+1}" for i in range(scores_subset.shape[1])]
 
@@ -247,6 +257,34 @@ if mode == "2D":
             index=1 if len(pc_options) > 1 else 0,
             key="pc_y_2d"
         )
+    
+    if cat_cols and cat_df is not None:
+        st.markdown("#### Opcional: colorear puntos por variable categórica")
+
+        color_choice = st.selectbox(
+            "Variable categórica para colorear (opcional):",
+            options=["Ninguna"] + cat_cols,
+            index=0,
+            help="Si seleccionas una variable, los puntos se colorearán según sus categorías.",
+        )
+
+        if color_choice != "Ninguna":
+            # Asegurarnos de alinear por índice
+            if color_choice in cat_df.columns:
+                # Convertimos a string por si vienen códigos numéricos
+                scores_for_plot[color_choice] = (
+                    cat_df.loc[scores_for_plot.index, color_choice].astype(str)
+                )
+                color_var = color_choice
+            else:
+                st.warning(
+                    f"La columna categórica '{color_choice}' no se encontró en los datos categóricos. "
+                    "Se omitirá el color."
+                )
+                color_var = None
+    else:
+        # No hay variables categóricas disponibles: no mostramos selectbox y seguimos normal
+        color_var = None
 
     # Evitar que X e Y sean exactamente la misma PC
     if pc_x == pc_y and len(pc_options) > 1:
@@ -261,9 +299,10 @@ if mode == "2D":
 
         # 3) Construir figura (estilo ya viene desde el backend)
         fig_scores_2d = plot_scores_2d(
-            scores_subset,
+            scores_for_plot,      # <--- USAMOS EL DF QUE INCLUYE LA COLUMNA CATEGÓRICA (si aplica)
             pc_x=pc_x,
             pc_y=pc_y,
+            color=color_var,      # <--- NUEVO
             title=f"Scores PCA ({pc_x} vs {pc_y})"
         )
 
@@ -287,6 +326,7 @@ if mode == "2D":
         pca_figs["fig_scores_2d"] = fig_scores_2d
         pca_info["pc_x_2d"] = pc_x
         pca_info["pc_y_2d"] = pc_y
+        pca_info["color_var"] = color_var   # <--- OPCIONAL: guardamos qué variable se usó para colorear
 
 else:  # mode == "3D"
     if len(pc_options) < 3:
@@ -300,6 +340,34 @@ else:  # mode == "3D"
             pc_y = st.selectbox("PC eje Y", pc_options, index=1, key="pc_y_3d")
         with col_pc3:
             pc_z = st.selectbox("PC eje Z", pc_options, index=2, key="pc_z_3d")
+
+        if cat_cols and cat_df is not None:
+            st.markdown("#### Opcional: colorear puntos por variable categórica")
+
+            color_choice = st.selectbox(
+                "Variable categórica para colorear (opcional):",
+                options=["Ninguna"] + cat_cols,
+                index=0,
+                help="Si seleccionas una variable, los puntos se colorearán según sus categorías.",
+            )
+
+            if color_choice != "Ninguna":
+                # Asegurarnos de alinear por índice
+                if color_choice in cat_df.columns:
+                    # Convertimos a string por si vienen códigos numéricos
+                    scores_for_plot[color_choice] = (
+                        cat_df.loc[scores_for_plot.index, color_choice].astype(str)
+                    )
+                    color_var = color_choice
+                else:
+                    st.warning(
+                        f"La columna categórica '{color_choice}' no se encontró en los datos categóricos. "
+                        "Se omitirá el color."
+                    )
+                    color_var = None
+        else:
+            # No hay variables categóricas disponibles: no mostramos selectbox y seguimos normal
+            color_var = None
 
         # Validar que todas sean diferentes
         if len({pc_x, pc_y, pc_z}) < 3:
@@ -316,10 +384,11 @@ else:  # mode == "3D"
 
             # 3) Construir figura (estilo ya viene del backend)
             fig_scores_3d = plot_scores_3d(
-                scores_subset,
+                scores_for_plot,      # <--- DF con columna categórica si aplica
                 pc_x=pc_x,
                 pc_y=pc_y,
                 pc_z=pc_z,
+                color=color_var,      # <--- NUEVO
                 title=f"Scores PCA ({pc_x} vs {pc_y} vs {pc_z})",
             )
 
@@ -343,6 +412,7 @@ else:  # mode == "3D"
             pca_info["pc_x_3d"] = pc_x
             pca_info["pc_y_3d"] = pc_y
             pca_info["pc_z_3d"] = pc_z
+            pca_info["color_var"] = color_var   # <--- también aquí
 
 st.markdown("---")
 
