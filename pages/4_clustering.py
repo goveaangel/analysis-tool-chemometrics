@@ -44,13 +44,6 @@ elif raw_data_state is not None:
 else:
     raw_df = None
 
-if raw_df is None:
-    st.warning(
-        "No se encontraron datos en sesión. "
-        "Primero carga y preprocesa un dataset en las pestañas anteriores."
-    )
-    st.stop()
-
 # ============================
 # 0.5 Recuperar info de PCA
 # ============================
@@ -62,6 +55,7 @@ if pca_info is None or "scores" not in pca_info:
         "Ve a la pestaña **📉 PCA**, ejecuta el análisis y presiona "
         "el botón **'✅ Guardar información PCA'** antes de usar clustering."
     )
+    st.stop()
 
 scores = pca_info["scores"]
 
