@@ -202,3 +202,45 @@ else:
 
     st.markdown("**Medias de variables numéricas por clúster**")
     st.dataframe(summary["means"])
+    
+# ============================
+# 6. Guardar información de clustering en session_state
+# ============================
+
+cluster_info = {
+    "method": method,
+    "pc_model_cols": pc_model_cols,           
+    "labels": labels,                         
+    "n_obs": len(labels),
+}
+
+if method == "K-means":
+    cluster_info["n_clusters"] = int(k)
+    cluster_info["silhouette"] = float(sil) if not np.isnan(sil) else None
+    cluster_info["inertia"] = float(inertia) if not np.isnan(inertia) else None
+else:
+    cluster_info["n_clusters"] = int(n_clusters)
+    cluster_info["silhouette"] = float(sil) if not np.isnan(sil) else None
+    cluster_info["linkage"] = linkage
+
+# Opcional: también puedes guardar el resumen ya calculado
+cluster_info["cluster_sizes"] = summary["sizes"]
+cluster_info["cluster_means"] = summary["means"]
+
+# Construir diccionario de figuras
+cluster_figs = {
+    "scatter": fig_scatter,
+}
+if method == "Clúster jerárquico" and "fig_dend" in locals():
+    cluster_figs["dendrogram"] = fig_dend
+
+st.markdown("---")
+st.subheader("6. Guardar información de clustering")
+
+if st.button("✅ Guardar información de clustering", use_container_width=True):
+    try:
+        st.session_state["cluster_info"] = cluster_info
+        st.session_state["cluster_figs"] = cluster_figs
+        st.success("Información y gráficas de clustering guardadas correctamente.")
+    except Exception as e:
+        st.error(f"Error al guardar la información de clustering: {e}")
