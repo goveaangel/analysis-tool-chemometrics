@@ -220,6 +220,63 @@ def select_columns(df, selected_cols):
     df_selected_cols = df[selected_cols].copy()
     return df_selected_cols
 
+def detect_column_types(
+    df: pd.DataFrame,
+    max_unique_absolute: int = 10,
+    max_unique_ratio: float = 0.05,
+):
+    """
+    Detecta columnas numéricas, no numéricas y categóricas (incluyendo
+    numéricas que en realidad son códigos, como feedstock, concentration).
+
+    Devuelve un diccionario con:
+    - all_cols
+    - numeric_cols
+    - non_numeric_colsdame
+    - likely_cat_from_numeric
+    - categorical_cols
+    - pure_numeric_cols
+    """
+    if df is None or df.empty:
+        return {
+            "all_cols": [],
+            "numeric_cols": [],
+            "non_numeric_cols": [],
+            "likely_cat_from_numeric": [],
+            "categorical_cols": [],
+            "pure_numeric_cols": [],
+        }
+
+    all_cols = df.columns.tolist()
+    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+    non_numeric_cols = df.select_dtypes(exclude="number").columns.tolist()
+
+    # Heurística: numéricas con pocos valores únicos -> probablemente categóricas
+    likely_cat_from_numeric = []
+    n_rows = len(df)
+    # umbral dinámico: max(absolute, ratio * n_rows)
+    unique_threshold = max(max_unique_absolute, int(max_unique_ratio * n_rows))
+
+    for col in numeric_cols:
+        n_unique = df[col].nunique(dropna=True)
+        if n_unique <= unique_threshold:
+            likely_cat_from_numeric.append(col)
+
+    # Categóricas = texto + numéricas "código"
+    categorical_cols = sorted(set(non_numeric_cols + likely_cat_from_numeric))
+
+    # Numéricas "puras" = numéricas menos las que parecen categóricas
+    pure_numeric_cols = [col for col in numeric_cols if col not in likely_cat_from_numeric]
+
+    return {
+        "all_cols": all_cols,
+        "numeric_cols": numeric_cols,
+        "non_numeric_cols": non_numeric_cols,
+        "likely_cat_from_numeric": likely_cat_from_numeric,
+        "categorical_cols": categorical_cols,
+        "pure_numeric_cols": pure_numeric_cols,
+    }
+
 # MANEJO DE NANS
 
 def drop_nan_columns(df, max_nan):
@@ -687,7 +744,7 @@ def run_manual_preprocessing(
     elif outlier_action_ui == "No hacer nada (solo diagnóstico)":
         outlier_action_type = "none"
     else:
-        raise ValueError(f"Acción de outliers no soportada: {outlier_action}")
+        raise ValueError(f"Acción de outliers no soportada: {outlier_action_ui}")
 
     # Si no hay detección de outliers, la máscara es todo False
     if outlier_method == "none":
@@ -749,10 +806,16 @@ def basic(
     var_thresh=1e-8,
     scaling_method="zscore"
 ):
-    
+    # CAMBIO: detectar tipos de columnas al inicio
+    types_info = detect_column_types(df)  # CAMBIO
+    numeric_cols = types_info["numeric_cols"]              # CAMBIO
+    categorical_cols = types_info["categorical_cols"]      # CAMBIO
+    pure_numeric_cols = types_info["pure_numeric_cols"]    # CAMBIO
+
     n_rows_before, n_cols_before = df.shape
 
-    df_num = df.select_dtypes(include='number')
+    # CAMBIO: usar solo columnas numéricas "puras" (sin códigos categóricos)
+    df_num = df[pure_numeric_cols]  # CAMBIO
     if df_num.shape[1] == 0:
         raise ValueError('La plantilla básica no encontró columnas numéricas en el dataset.')
     
@@ -803,5 +866,10 @@ def basic(
 
         final_columns=list(df_scaled.columns),
     )
+
+    # CAMBIO: agregar info de columnas al reporte
+    report["numeric_cols"] = numeric_cols            # CAMBIO
+    report["categorical_cols"] = categorical_cols    # CAMBIO
+    report["pure_numeric_cols"] = pure_numeric_cols  # CAMBIO
 
     return df_scaled, report

@@ -1,5 +1,13 @@
 import streamlit as st
-from backend.preprocesing import basic, run_manual_preprocessing, correlation_heatmap, boxplot_variables_grid, histogram_variables_grid
+
+from backend.preprocesing import (
+    basic,
+    run_manual_preprocessing,
+    correlation_heatmap,
+    boxplot_variables_grid,
+    histogram_variables_grid,
+    detect_column_types,  
+)
 
 # Inicializar claves mínimas en session_state
 if "raw_data" not in st.session_state:
@@ -64,7 +72,7 @@ with st.expander('🚨 Plantillas de Preprocesamiento'):
     if plantilla == "Ninguna":
         st.write("- No se aplicará ningún preprocesamiento automático.")
     elif plantilla == "Plantilla básica":
-        st.write("- Selecciona solo columnas numéricas.")
+        st.write("- Deteccion automatica columnas numercias y categoricas.")
         st.write("- Elimina columnas y filas con muchos valores faltantes.")
         st.write("- Imputa los NAs restantes con la mediana.")
         st.write("- Elimina columnas con varianza casi nula.")
@@ -79,6 +87,18 @@ with st.expander('🚨 Plantillas de Preprocesamiento'):
             try:
                 # Llamamos a la plantilla básica del backend
                 clean_df, report = basic(raw_df)
+
+                # Recuperar info de columnas desde el reporte
+                numeric_cols_basic = report.get("pure_numeric_cols", list(clean_df.columns))
+                categorical_cols_basic = report.get("categorical_cols", [])
+
+                st.session_state["selected_numeric_vars"] = numeric_cols_basic
+                st.session_state["selected_categorical_vars"] = categorical_cols_basic
+
+                if categorical_cols_basic:
+                    st.session_state["categorical_data"] = raw_df[categorical_cols_basic].copy()
+                else:
+                    st.session_state["categorical_data"] = None
 
                 # Guardamos resultados en session_state
                 st.session_state["clean_data"] = clean_df
@@ -221,28 +241,74 @@ with st.expander('📊 Graficas y visualizaciones'):
         else:
             st.plotly_chart(fig_hist, use_container_width=True)
 
+st.markdown('---')
+
 # ==========================================================
 # 1) SELECCIÓN DE COLUMNAS
 # ==========================================================
 st.header("1️⃣ Selección de columnas")
+st.markdown("Elige qué variables se usarán en el análisis.")
 
-st.markdown('Elige qué variables se usarán en el análisis.')
+df = raw_df  
 
-# Detección rápida de tipos (solo UI, sin aplicar nada todavía)
+# Detección automática de tipos 
 
+types_info = detect_column_types(df)
 
-st.markdown("**Variables numéricas detectadas:**")
-st.caption(", ".join(numeric_cols) if numeric_cols else "_No se detectaron columnas numéricas._")
+all_cols = types_info["all_cols"]
+numeric_cols = types_info["numeric_cols"]
+non_numeric_cols = types_info["non_numeric_cols"]
+likely_cat_from_numeric = types_info["likely_cat_from_numeric"]
+detected_categorical_cols = types_info["categorical_cols"]
+pure_numeric_cols = types_info["pure_numeric_cols"]
 
-selected_vars = st.multiselect(
-    "Selecciona variables numéricas para el análisis:",
-    options=numeric_cols,
-    default=numeric_cols,  # por ahora seleccionamos todas por defecto
-)
+col_num, col_cat = st.columns(2)
 
-st.caption(f'Has seleccionado **{len(selected_vars)}** variables numéricas')
+with col_num:
+    st.subheader("Variables numéricas")
 
-st.markdown("---")
+    st.markdown("Se detectaron automáticamente las siguientes variables:")
+    st.caption(
+        ", ".join(numeric_cols)
+        if numeric_cols else "_No se detectaron variables numéricas._"
+    )
+
+    selected_vars = st.multiselect(
+        "Selecciona variables numéricas:",
+        options=numeric_cols,
+        default=pure_numeric_cols,   # solo numéricas "puras"
+    )
+
+    st.caption(f"Has seleccionado **{len(selected_vars)}** variables numéricas.")
+
+with col_cat:
+    st.subheader("Variables categóricas")
+
+    st.markdown("Se detectaron automáticamente las siguientes variables:")
+    st.caption(
+        ", ".join(detected_categorical_cols)
+        if detected_categorical_cols else "_No se detectaron variables categóricas._"
+    )
+
+    selected_cats = st.multiselect(
+        "Selecciona variables categóricas:",
+        options=all_cols,
+        default=detected_categorical_cols,
+    )
+
+    st.caption(f"Has seleccionado **{len(selected_cats)}** variables categóricas.")
+
+# Guardar selección en session_state
+st.session_state["selected_numeric_vars"] = selected_vars
+st.session_state["selected_categorical_vars"] = selected_cats
+
+# También guardamos un DataFrame solo con las categóricas seleccionadas
+if selected_cats:
+    st.session_state["categorical_data"] = raw_df[selected_cats].copy()
+else:
+    st.session_state["categorical_data"] = None
+
+st.markdown('---')
 
 # ==========================================================
 # 2) MANEJO DE NaNs
@@ -345,9 +411,9 @@ with col_out2:
     outlier_action_ui = st.selectbox(
         "Acción a tomar:",
         options=[
+            "No hacer nada (solo diagnóstico)",
             "Solo marcar outliers",
             "Excluir filas outliers",
-            "No hacer nada (solo diagnóstico)",
         ],
     )
 
@@ -435,6 +501,9 @@ if generar:
             transform_type=transform_type,
             vars_to_transform=vars_to_transform,
         )
+
+        report["selected_numeric_vars"] = selected_vars
+        report["selected_categorical_vars"] = selected_cats
 
         # Guardar en session_state para usar en PCA / Clustering
         st.session_state["clean_data"] = clean_df
